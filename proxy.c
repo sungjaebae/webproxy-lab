@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+void *thread_proxy(void *arg);
 void proxy(int clientfd);
 void read_request_headers(rio_t *rp, char *buf[]);
 void parse_url(char url[], char scheme[], char hostname[], char port[],
@@ -24,6 +25,7 @@ int main(int argc, char **argv) {
   char hostname[MAXLINE], port[MAXLINE];
   socklen_t clientlen;
   struct sockaddr_storage clientaddr;
+  pthread_t tid;
 
   if (argc != 2) {
     fprintf(stderr, "usage: %s <port>\n", argv[0]);
@@ -37,10 +39,19 @@ int main(int argc, char **argv) {
     Getnameinfo((sockaddr *)&clientaddr, clientlen, hostname, MAXLINE, port,
                 MAXLINE, 0);
     printf("Accepted connection from (%s, %s)\n", hostname, port);
-    proxy(connfd);
-    Close(connfd);
+    void *arg = Malloc(sizeof(int));
+    memcpy(arg, &connfd, sizeof(int));
+    Pthread_create(&tid, NULL, thread_proxy, arg);
   }
   return 0;
+}
+void *thread_proxy(void *arg) {
+  int connfd = *(int *)arg;
+  Pthread_detach(Pthread_self());
+  proxy(connfd);
+  free(arg);
+  close(connfd);
+  return NULL;
 }
 
 void proxy(int connfd) {

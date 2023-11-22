@@ -7,6 +7,7 @@
 CC = gcc
 CFLAGS = -g -Wall
 LDFLAGS = -lpthread
+OBJS = proxy.o sock.o
 
 proxy: $(OBJS)
 	$(CC) $(CFLAGS) -o proxy $(OBJS) $(LDFLAGS)
