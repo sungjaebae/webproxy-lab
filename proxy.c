@@ -1,3 +1,4 @@
+#include "cache.h"
 #include "sock.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -31,7 +32,7 @@ int main(int argc, char **argv) {
     fprintf(stderr, "usage: %s <port>\n", argv[0]);
     exit(1);
   }
-
+  init_caches();
   listenfd = Open_listenfd(argv[1]);
   while (1) {
     clientlen = sizeof(clientaddr);
@@ -85,30 +86,46 @@ void proxy(int connfd) {
   // 클라이언트 요청의 헤더를 읽는다
   read_request_headers(&rio, client_request_headers_buf);
 
-  // 서버로 보낼 헤더를 만든다
-  parse_url(uri, scheme, hostname, port, path);
-  header_length = make_request_start_line(end_server_request_buf, method, path);
-  header_length = make_reqeust_headers(end_server_request_buf, header_length,
-                                       client_request_headers_buf, hostname);
+  // 캐시를 확인하고 있으면 서버와의 통신을 생략한다
+  try_get_cache(request_line, server_response_start_line,
+                client_response_header_buf, &end_server_response_buf,
+                &header_length, &content_length);
+  if (content_length == 0) {
+    // 서버로 보낼 헤더를 만든다
+    parse_url(uri, scheme, hostname, port, path);
+    header_length =
+        make_request_start_line(end_server_request_buf, method, path);
+    header_length = make_reqeust_headers(end_server_request_buf, header_length,
+                                         client_request_headers_buf, hostname);
 
-  header_length = add_empty_line(end_server_request_buf, header_length);
-  if ((content_length = http_send(
-           end_server_request_buf, header_length, server_response_start_line,
-           server_response_header_buf, &end_server_response_buf, hostname,
-           port)) == -2) { // 전송 실패. 엔드 서버가 꺼져있을 것이다
-    return;
+    header_length = add_empty_line(end_server_request_buf, header_length);
+    if ((content_length = http_send(
+             end_server_request_buf, header_length, server_response_start_line,
+             server_response_header_buf, &end_server_response_buf, hostname,
+             port)) == -2) { // 전송 실패. 엔드 서버가 꺼져있을 것이다
+      return;
+    }
+    // 클라이언트에 보낼 응답 헤더를 만든다
+    header_length = 0;
+    for (int i = 0; server_response_header_buf[i] != NULL; i++) {
+      header_length += sprintf(client_response_header_buf + header_length, "%s",
+                               server_response_header_buf[i]);
+      free(server_response_header_buf[i]);
+    }
+    header_length = add_empty_line(client_response_header_buf, header_length);
+    // 캐싱한다
+    add_cache(request_line, server_response_start_line,
+              client_response_header_buf, end_server_response_buf,
+              header_length, content_length);
+  } else {
+    printf("cache hit\n");
   }
+
   // 클라이언트에 응답 스타트 라인을 보낸다
   Rio_writen(connfd, server_response_start_line,
              strlen(server_response_start_line));
+
   // 클라이언트에 응답 헤더를 보낸다
-  header_length = 0;
-  for (int i = 0; server_response_header_buf[i] != NULL; i++) {
-    header_length += sprintf(client_response_header_buf + header_length, "%s",
-                             server_response_header_buf[i]);
-    free(server_response_header_buf[i]);
-  }
-  header_length = add_empty_line(client_response_header_buf, header_length);
   Rio_writen(connfd, client_response_header_buf, header_length);
   // 클라이언트에 바디를 보낸다
   if (content_length != -1) {
