@@ -1,0 +1,12 @@
+[
+    {
+        "command": "clang -g -O3 -Wall -I . -c csapp.c",
+        "directory": "/root/workspace/webproxy-lab/tiny",
+        "file": "/root/workspace/webproxy-lab/tiny/csapp.c"
+    },
+    {
+        "command": "clang -g -O3 -Wall -I . -o tiny tiny.c csapp.o -lpthread",
+        "directory": "/root/workspace/webproxy-lab/tiny",
+        "file": "/root/workspace/webproxy-lab/tiny/tiny.c"
+    }
+]

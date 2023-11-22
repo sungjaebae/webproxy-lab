@@ -8,22 +8,20 @@ CC = gcc
 CFLAGS = -g -Wall
 LDFLAGS = -lpthread
 
-all: proxy
+proxy: $(OBJS)
+	$(CC) $(CFLAGS) -o proxy $(OBJS) $(LDFLAGS)
 
-csapp.o: csapp.c csapp.h
-	$(CC) $(CFLAGS) -c csapp.c
+%.o: %.c 
+	$(CC) $(CFLAGS) -c $< -MD
 
-proxy.o: proxy.c csapp.h
-	$(CC) $(CFLAGS) -c proxy.c
 
-proxy: proxy.o csapp.o
-	$(CC) $(CFLAGS) proxy.o csapp.o -o proxy $(LDFLAGS)
+clean:
+	rm -f *~ *.o *.d proxy compile_commands.json
+
 
 # Creates a tarball in ../proxylab-handin.tar that you can then
 # hand in. DO NOT MODIFY THIS!
 handin:
 	(make clean; cd ..; tar cvf $(USER)-proxylab-handin.tar proxylab-handout --exclude tiny --exclude nop-server.py --exclude proxy --exclude driver.sh --exclude port-for-user.pl --exclude free-port.sh --exclude ".*")
 
-clean:
-	rm -f *~ *.o proxy core *.tar *.zip *.gzip *.bzip *.gz
-
+-include $(OBJS:.o=.d)

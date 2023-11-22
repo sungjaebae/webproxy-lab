@@ -1,0 +1,11 @@
+{
+  "makefile.compileCommandsPath": "./compile_commands.json",
+  "makefile.launchConfigurations": [
+    {
+      "cwd": "/root/workspace/webproxy-lab/tiny",
+      "binaryPath": "/root/workspace/webproxy-lab/tiny/tiny",
+      "MIMode": "gdb",
+      "binaryArgs": ["80"],
+    }
+  ],
+}

@@ -1,5 +1,5 @@
-CC = gcc
-CFLAGS = -O2 -Wall -I .
+CC = clang
+CFLAGS = -g -O3 -Wall -I .
 
 # This flag includes the Pthreads library on a Linux box.
 # Others systems will probably require something different.

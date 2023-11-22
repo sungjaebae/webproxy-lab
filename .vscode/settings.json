@@ -1,0 +1,9 @@
+{
+  "makefile.launchConfigurations": [
+    {
+      "cwd": "/root/workspace/webproxy-lab",
+      "binaryPath": "/root/workspace/webproxy-lab/proxy",
+      "binaryArgs": ["8000"]
+    }
+  ]
+}
